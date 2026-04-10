@@ -13,209 +13,172 @@
         .card:hover { transform: translateY(-2px); }
     </style>
 </head>
+
 <body class="p-4 md:p-8">
 
-    <!-- Header Section -->
-    <div class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <h1 class="text-3xl font-bold text-slate-800">🏥 ระบบสรุปข้อมูลแผนกฉุกเฉิน (ER)</h1>
-            <p class="text-slate-500">รายงานสรุปผลการปฏิบัติงานและสถานะผู้ป่วยรายวัน</p>
-        </div>
-        <div class="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm border border-slate-200">
-            <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-            <span class="text-sm font-medium text-slate-600">ข้อมูลอัปเดตแบบ Real-time จากชุดข้อมูลด้านล่าง</span>
-        </div>
-    </div>
+<div class="max-w-7xl mx-auto mb-8 flex justify-between">
+    <h1 class="text-3xl font-bold">🏥 ER Dashboard</h1>
+</div>
 
-    <!-- KPI Tiles -->
-    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="card p-6 border-l-4 border-blue-500">
-            <p class="text-sm text-slate-500 font-medium uppercase tracking-wider">ผู้ป่วยทั้งหมด</p>
-            <h3 id="totalPatients" class="text-4xl font-bold text-slate-800">-</h3>
-            <p class="text-xs text-blue-600 mt-2 font-semibold">ราย (100%)</p>
-        </div>
-        <div class="card p-6 border-l-4 border-emerald-500">
-            <p class="text-sm text-slate-500 font-medium uppercase tracking-wider">อัตราการรอดชีวิต</p>
-            <h3 id="survivalRate" class="text-4xl font-bold text-slate-800">-</h3>
-            <p id="survivalCount" class="text-xs text-emerald-600 mt-2 font-semibold">-</p>
-        </div>
-        <div class="card p-6 border-l-4 border-orange-500">
-            <p class="text-sm text-slate-500 font-medium uppercase tracking-wider">ผู้ป่วยส่งต่อ (Refer)</p>
-            <h3 id="referCount" class="text-4xl font-bold text-slate-800">-</h3>
-            <p id="referPercent" class="text-xs text-orange-600 mt-2 font-semibold">-</p>
-        </div>
-        <div class="card p-6 border-l-4 border-red-500">
-            <p class="text-sm text-slate-500 font-medium uppercase tracking-wider">ผู้ป่วยเสียชีวิต</p>
-            <h3 id="deathCount" class="text-4xl font-bold text-slate-800">-</h3>
-            <p class="text-xs text-red-600 mt-2 font-semibold">เคสวิกฤต/ฉุกเฉิน</p>
-        </div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="card p-4">
+        <p>ผู้ป่วยทั้งหมด</p>
+        <h2 id="totalPatients" class="text-3xl font-bold"></h2>
     </div>
+    <div class="card p-4">
+        <p>อัตรารอดชีวิต</p>
+        <h2 id="survivalRate" class="text-3xl font-bold"></h2>
+    </div>
+    <div class="card p-4">
+        <p>Refer</p>
+        <h2 id="referCount" class="text-3xl font-bold"></h2>
+    </div>
+    <div class="card p-4">
+        <p>เสียชีวิต</p>
+        <h2 id="deathCount" class="text-3xl font-bold"></h2>
+    </div>
+</div>
 
-    <!-- Charts Section -->
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div class="card p-6">
-            <h4 class="text-lg font-semibold text-slate-800 mb-6">ระดับความรุนแรง (Triage Level)</h4>
-            <div class="h-64">
-                <canvas id="triageChart"></canvas>
-            </div>
-        </div>
-        <div class="card p-6">
-            <h4 class="text-lg font-semibold text-slate-800 mb-6">การจำหน่ายผู้ป่วย (Disposition)</h4>
-            <div class="h-64">
-                <canvas id="dispositionChart"></canvas>
-            </div>
-        </div>
+<div class="grid md:grid-cols-2 gap-6 mb-6">
+    <div class="card p-4">
+        <canvas id="triageChart"></canvas>
     </div>
+    <div class="card p-4">
+        <canvas id="dispositionChart"></canvas>
+    </div>
+</div>
 
-    <!-- Data Table -->
-    <div class="max-w-7xl mx-auto">
-        <div class="card overflow-hidden">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h4 class="text-lg font-semibold text-slate-800">ตารางข้อมูลผู้ป่วย (แก้ไขข้อมูลที่นี่เพื่ออัปเดตกราฟ)</h4>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-semibold">
-                        <tr>
-                            <th class="px-6 py-4">CID</th>
-                            <th class="px-6 py-4">ชื่อ-นามสกุล</th>
-                            <th class="px-6 py-4 text-center">เพศ</th>
-                            <th class="px-6 py-4 text-center">ระดับ Triage</th>
-                            <th class="px-6 py-4 text-center">สถานะ</th>
-                            <th class="px-6 py-4 text-center">เสียชีวิต</th>
-                        </tr>
-                    </thead>
-                    <tbody id="patientTableBody" class="divide-y divide-slate-100">
-                        <!-- Data will be populated by JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+<div class="card">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="p-2">CID</th>
+                <th>ชื่อ</th>
+                <th>เพศ</th>
+                <th>ระดับ</th>
+                <th>สถานะ</th>
+                <th>เสียชีวิต</th>
+            </tr>
+        </thead>
+        <tbody id="patientTableBody"></tbody>
+    </table>
+</div>
 
 <script>
-        // === ข้อมูลจำลอง (สามารถเปลี่ยนเป็น Fetch API ได้ในอนาคต) ===
-        const rawData = [
-            { cid: 1, name: "นายก ไก่", gender: "ชาย", triage: 4, status: "Refer", death: "N" },
-            { cid: 2, name: "นายข ไข่", gender: "ชาย", triage: 3, status: "Admit", death: "N" },
-            { cid: 3, name: "นายค คน", gender: "ชาย", triage: 2, status: "D/C", death: "N" },
-            { cid: 4, name: "น.ส.ง ไม่งง", gender: "หญิง", triage: 1, status: "D/C", death: "Y" },
-            { cid: 5, name: "น.ส.จ จีบ", gender: "หญิง", triage: 5, status: "Refer", death: "N" },
-            { cid: 6, name: "น.ส.อ อ่าง", gender: "หญิง", triage: 5, status: "Refer", death: "N" },
-            { cid: 7, name: "ทดสอบ", gender: "หญิง", triage: 1, status: "Refer", death: "Y" },
-            { cid: 8, name: "อิอิ อุอุ", gender: "ชาย", triage: 5, status: "D/C", death: "N" },
-            { cid: 9, name: "ss qq", gender: "ชาย", triage: 5, status: "D/C", death: "N" },
-            { cid: 10, name: "ทดสอบกิตฮับ qq", gender: "ชาย", triage: 5, status: "D/C", death: "N" },
-            { cid: 11, name: "ไม่รู้เลย นะ", gender: "หญิง", triage: 4, status: "Admit", death: "N" }
-            
-        ];
 
-        // ตัวแปรสำหรับเก็บ Instance ของกราฟ เพื่อป้องกันการวาดซ้อน
-        let triageChartInstance = null;
-        let dispositionChartInstance = null;
+const rawData = [
+    { cid: 1, name: "นายก ไก่", gender: "ชาย", triage: 4, status: "Refer", death: "N" },
+    { cid: 2, name: "นายข ไข่", gender: "ชาย", triage: 3, status: "Admit", death: "N" },
+    { cid: 3, name: "นายค คน", gender: "ชาย", triage: 2, status: "D/C", death: "N" },
+    { cid: 4, name: "น.ส.ง ไม่งง", gender: "หญิง", triage: 1, status: "D/C", death: "Y" },
+    { cid: 5, name: "น.ส.จ จีบ", gender: "หญิง", triage: 5, status: "Refer", death: "N" },
+    { cid: 6, name: "น.ส.อ อ่าง", gender: "หญิง", triage: 5, status: "Refer", death: "N" },
+    { cid: 7, name: "ทดสอบ", gender: "หญิง", triage: 1, status: "Refer", death: "Y" },
+    { cid: 8, name: "อิอิ อุอุ", gender: "ชาย", triage: 5, status: "D/C", death: "N" },
+];
 
-        // ฟังก์ชันหลักที่สั่งให้ทำงานเมื่อโหลดหน้าจอ
-        window.onload = function() {
-            initDashboard();
-        };
+let triageChartInstance;
+let dispositionChartInstance;
 
-        function initDashboard() {
-            // รันครั้งแรกทันที
-            updateDashboard(rawData);
+window.onload = () => updateDashboard(rawData);
 
-            // ตั้งเวลา Refresh ทุกๆ 30 วินาที (30000 มิลลิวินาที)
-            setInterval(() => {
-                console.log("Auto-refreshing data... " + new Date().toLocaleTimeString());
-                updateDashboard(rawData);
-            }, 5000);
+function updateDashboard(data){
+
+    const total = data.length;
+    const deaths = data.filter(p => p.death === "Y").length;
+    const refer = data.filter(p => p.status === "Refer").length;
+
+    document.getElementById('totalPatients').innerText = total;
+    document.getElementById('deathCount').innerText = deaths;
+    document.getElementById('referCount').innerText = refer;
+    document.getElementById('survivalRate').innerText = ((total - deaths)/total*100).toFixed(1) + "%";
+
+    // ===== TRIAGE =====
+    const triageCounts = [0,0,0,0,0];
+    data.forEach(p => triageCounts[p.triage-1]++);
+
+    if(triageChartInstance) triageChartInstance.destroy();
+
+    triageChartInstance = new Chart(document.getElementById('triageChart'),{
+        type:'bar',
+        data:{
+            labels:[
+                'ระดับ 1 (วิกฤต)',
+                'ระดับ 2 (หนัก)',
+                'ระดับ 3 (เร่งด่วน)',
+                'ระดับ 4 (ไม่รุนแรง)',
+                'ระดับ 5 (ทั่วไป)'
+            ],
+            datasets:[{
+                data:triageCounts,
+                backgroundColor:[
+                    '#dc2626', // แดง
+                    '#ec4899', // ชมพู
+                    '#facc15', // เหลือง
+                    '#22c55e', // เขียว
+                    '#ffffff'  // ขาว
+                ],
+                borderColor:[
+                    '#dc2626',
+                    '#ec4899',
+                    '#facc15',
+                    '#22c55e',
+                    '#94a3b8'
+                ],
+                borderWidth:1
+            }]
+        },
+        options:{plugins:{legend:{display:false}}}
+    });
+
+    // ===== DISPOSITION =====
+    const statusMap = {};
+    data.forEach(p => statusMap[p.status] = (statusMap[p.status]||0)+1);
+
+    if(dispositionChartInstance) dispositionChartInstance.destroy();
+
+    dispositionChartInstance = new Chart(document.getElementById('dispositionChart'),{
+        type:'doughnut',
+        data:{
+            labels:Object.keys(statusMap),
+            datasets:[{
+                data:Object.values(statusMap)
+            }]
         }
+    });
 
-        function updateDashboard(data) {
-            // --- 1. คำนวณ KPIs ---
-            const total = data.length;
-            const deaths = data.filter(p => p.death === "Y").length;
-            const survivors = total - deaths;
-            const survivalRate = ((survivors / total) * 100).toFixed(1);
-            const refers = data.filter(p => p.status === "Refer").length;
-            const referRate = ((refers / total) * 100).toFixed(0);
+    // ===== TABLE =====
+    const table = document.getElementById('patientTableBody');
+    table.innerHTML = '';
 
-            document.getElementById('totalPatients').innerText = total;
-            document.getElementById('survivalRate').innerText = survivalRate + "%";
-            document.getElementById('survivalCount').innerText = `${survivors} ใน ${total} ราย`;
-            document.getElementById('referCount').innerText = refers;
-            document.getElementById('referPercent').innerText = `${referRate}% ของเคสทั้งหมด`;
-            document.getElementById('deathCount').innerText = deaths;
+    const triageConfig = {
+        1: { color: 'bg-red-600 text-white', text: 'ผู้ป่วยฉุกเฉินวิกฤต' },
+        2: { color: 'bg-pink-500 text-white', text: 'ผู้ป่วยฉุกเฉินหนัก' },
+        3: { color: 'bg-yellow-400 text-black', text: 'ผู้ป่วยฉุกเฉินเร่งด่วน' },
+        4: { color: 'bg-green-500 text-white', text: 'ผู้ป่วยไม่รุนแรง' },
+        5: { color: 'bg-white text-black border', text: 'ผู้ป่วยทั่วไป' }
+    };
 
-            // --- 2. อัปเดตกราฟ Triage ---
-            const triageCounts = [0, 0, 0, 0, 0];
-            data.forEach(p => {
-                if (p.triage >= 1 && p.triage <= 5) triageCounts[p.triage - 1]++;
-            });
+    data.forEach(p=>{
+        const row = document.createElement('tr');
 
-            const ctxTriage = document.getElementById('triageChart').getContext('2d');
-            if (triageChartInstance) triageChartInstance.destroy(); // ลบกราฟเก่าถ้ามี
-            triageChartInstance = new Chart(ctxTriage, {
-                type: 'bar',
-                data: {
-                    labels: ['ระดับ 1', 'ระดับ 2', 'ระดับ 3', 'ระดับ 4', 'ระดับ 5'],
-                    datasets: [{
-                        data: triageCounts,
-                        backgroundColor: ['#9333ea', '#ef4444', '#f97316', '#eab308', '#3b82f6'],
-                        borderRadius: 8
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
+        row.innerHTML = `
+            <td class="p-2">${p.cid}</td>
+            <td>${p.name}</td>
+            <td>${p.gender}</td>
+            <td>
+                <span class="${triageConfig[p.triage].color} px-2 py-1 rounded text-xs">
+                    ระดับ ${p.triage} - ${triageConfig[p.triage].text}
+                </span>
+            </td>
+            <td>${p.status}</td>
+            <td class="${p.death==='Y'?'text-red-600':''}">${p.death}</td>
+        `;
+        table.appendChild(row);
+    });
+}
 
-            // --- 3. อัปเดตกราฟ Disposition ---
-            const statusMap = {};
-            data.forEach(p => {
-                statusMap[p.status] = (statusMap[p.status] || 0) + 1;
-            });
+</script>
 
-            const ctxDisp = document.getElementById('dispositionChart').getContext('2d');
-            if (dispositionChartInstance) dispositionChartInstance.destroy(); // ลบกราฟเก่าถ้ามี
-            dispositionChartInstance = new Chart(ctxDisp, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(statusMap),
-                    datasets: [{
-                        data: Object.values(statusMap),
-                        backgroundColor: ['#f97316', '#6366f1', '#10b981', '#f43f5e', '#8b5cf6'],
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-
-            // --- 4. อัปเดตตารางข้อมูล ---
-            const tableBody = document.getElementById('patientTableBody');
-            tableBody.innerHTML = ''; // ล้างข้อมูลเดิมในตารางก่อนเติมใหม่
-
-            data.forEach(p => {
-                const row = document.createElement('tr');
-                row.className = p.death === 'Y' ? 'hover:bg-red-50 bg-red-50/20' : 'hover:bg-slate-50';
-                
-                const triageColors = {
-                    1: 'bg-purple-600 text-white',
-                    2: 'bg-red-100 text-red-700',
-                    3: 'bg-orange-100 text-orange-700',
-                    4: 'bg-yellow-100 text-yellow-700',
-                    5: 'bg-blue-100 text-blue-700'
-                };
-
-                row.innerHTML = `
-                    <td class="px-6 py-4 font-medium text-slate-700">${p.cid}</td>
-                    <td class="px-6 py-4 text-slate-600">${p.name}</td>
-                    <td class="px-6 py-4 text-center text-slate-600">${p.gender}</td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="${triageColors[p.triage]} px-3 py-1 rounded-full text-xs font-bold">${p.triage}</span>
-                    </td>
-                    <td class="px-6 py-4 text-center text-slate-600">${p.status}</td>
-                    <td class="px-6 py-4 text-center ${p.death === 'Y' ? 'text-red-600 font-bold' : 'text-slate-400'}">${p.death}</td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-    </script>
 </body>
 </html>

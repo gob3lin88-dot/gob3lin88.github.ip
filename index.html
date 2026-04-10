@@ -93,8 +93,8 @@
         </div>
     </div>
 
-    <script>
-        // === ส่วนที่เชื่อมกับข้อมูลของคุณ (แก้ไขตรงนี้ได้เลย) ===
+<script>
+        // === ข้อมูลจำลอง (สามารถเปลี่ยนเป็น Fetch API ได้ในอนาคต) ===
         const rawData = [
             { cid: 1, name: "นายก ไก่", gender: "ชาย", triage: 4, status: "Refer", death: "N" },
             { cid: 2, name: "นายข ไข่", gender: "ชาย", triage: 3, status: "Admit", death: "N" },
@@ -102,21 +102,36 @@
             { cid: 4, name: "น.ส.ง ไม่งง", gender: "หญิง", triage: 1, status: "D/C", death: "Y" },
             { cid: 5, name: "น.ส.จ จีบ", gender: "หญิง", triage: 5, status: "Refer", death: "N" },
             { cid: 6, name: "น.ส.อ อ่าง", gender: "หญิง", triage: 5, status: "Refer", death: "N" },
-	    { cid: 7, name: "ทดสอบ", gender: "หญิง", triage: 1, status: "Refer", death: "Y" },
- 	    { cid: 8, name: "อิอิ อุอุ", gender: "ชาย", triage: 5, status: "D/C", death: "N" },
-		{ cid: 9, name: "ss qq", gender: "ชาย", triage: 5, status: "D/C", death: "N" },
-			{ cid: 10, name: "ทดสอบกิตฮับ qq", gender: "ชาย", triage: 5, status: "D/C", death: "N" },
-			{ cid: 11, name: "ไม่รู้เลย นะ", gender: "หญิง", triage: 4, status: "Admit", death: "N" },
-			{ cid: 12, name: "งงจัง", gender: "หญิง", triage: 3, status: "Admit", death: "N" }
-
+            { cid: 7, name: "ทดสอบ", gender: "หญิง", triage: 1, status: "Refer", death: "Y" },
+            { cid: 8, name: "อิอิ อุอุ", gender: "ชาย", triage: 5, status: "D/C", death: "N" },
+            { cid: 9, name: "ss qq", gender: "ชาย", triage: 5, status: "D/C", death: "N" },
+            { cid: 10, name: "ทดสอบกิตฮับ qq", gender: "ชาย", triage: 5, status: "D/C", death: "N" },
+            { cid: 11, name: "ไม่รู้เลย นะ", gender: "หญิง", triage: 4, status: "Admit", death: "N" },
+            
         ];
 
+        // ตัวแปรสำหรับเก็บ Instance ของกราฟ เพื่อป้องกันการวาดซ้อน
+        let triageChartInstance = null;
+        let dispositionChartInstance = null;
+
+        // ฟังก์ชันหลักที่สั่งให้ทำงานเมื่อโหลดหน้าจอ
         window.onload = function() {
-            updateDashboard(rawData);
+            initDashboard();
         };
 
+        function initDashboard() {
+            // รันครั้งแรกทันที
+            updateDashboard(rawData);
+
+            // ตั้งเวลา Refresh ทุกๆ 30 วินาที (30000 มิลลิวินาที)
+            setInterval(() => {
+                console.log("Auto-refreshing data... " + new Date().toLocaleTimeString());
+                updateDashboard(rawData);
+            }, 30000);
+        }
+
         function updateDashboard(data) {
-            // 1. คำนวณ KPIs
+            // --- 1. คำนวณ KPIs ---
             const total = data.length;
             const deaths = data.filter(p => p.death === "Y").length;
             const survivors = total - deaths;
@@ -124,7 +139,6 @@
             const refers = data.filter(p => p.status === "Refer").length;
             const referRate = ((refers / total) * 100).toFixed(0);
 
-            // แสดงผล KPIs
             document.getElementById('totalPatients').innerText = total;
             document.getElementById('survivalRate').innerText = survivalRate + "%";
             document.getElementById('survivalCount').innerText = `${survivors} ใน ${total} ราย`;
@@ -132,14 +146,15 @@
             document.getElementById('referPercent').innerText = `${referRate}% ของเคสทั้งหมด`;
             document.getElementById('deathCount').innerText = deaths;
 
-            // 2. เตรียมข้อมูลกราฟ Triage
-            const triageCounts = [0, 0, 0, 0, 0]; // L1 to L5
+            // --- 2. อัปเดตกราฟ Triage ---
+            const triageCounts = [0, 0, 0, 0, 0];
             data.forEach(p => {
                 if (p.triage >= 1 && p.triage <= 5) triageCounts[p.triage - 1]++;
             });
 
             const ctxTriage = document.getElementById('triageChart').getContext('2d');
-            new Chart(ctxTriage, {
+            if (triageChartInstance) triageChartInstance.destroy(); // ลบกราฟเก่าถ้ามี
+            triageChartInstance = new Chart(ctxTriage, {
                 type: 'bar',
                 data: {
                     labels: ['ระดับ 1', 'ระดับ 2', 'ระดับ 3', 'ระดับ 4', 'ระดับ 5'],
@@ -149,22 +164,18 @@
                         borderRadius: 8
                     }]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
-            // 3. เตรียมข้อมูลกราฟ Disposition
+            // --- 3. อัปเดตกราฟ Disposition ---
             const statusMap = {};
             data.forEach(p => {
                 statusMap[p.status] = (statusMap[p.status] || 0) + 1;
             });
 
             const ctxDisp = document.getElementById('dispositionChart').getContext('2d');
-            new Chart(ctxDisp, {
+            if (dispositionChartInstance) dispositionChartInstance.destroy(); // ลบกราฟเก่าถ้ามี
+            dispositionChartInstance = new Chart(ctxDisp, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(statusMap),
@@ -173,15 +184,13 @@
                         backgroundColor: ['#f97316', '#6366f1', '#10b981', '#f43f5e', '#8b5cf6'],
                     }]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
             });
 
-            // 4. สร้างตาราง
+            // --- 4. อัปเดตตารางข้อมูล ---
             const tableBody = document.getElementById('patientTableBody');
+            tableBody.innerHTML = ''; // ล้างข้อมูลเดิมในตารางก่อนเติมใหม่
+
             data.forEach(p => {
                 const row = document.createElement('tr');
                 row.className = p.death === 'Y' ? 'hover:bg-red-50 bg-red-50/20' : 'hover:bg-slate-50';
